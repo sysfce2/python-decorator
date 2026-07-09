@@ -3,6 +3,10 @@ HISTORY
 
 ## Unreleased
 
+Fixed `FunctionMaker.create` raising a `SyntaxError` when the signature
+string contains a return annotation, e.g.
+`create("f(a) -> int", "return a")` (issue #138).
+
 ## 5.3.1 (2026-05-18)
 
 Added license SPDX identifier to pyproject.toml (reported by
