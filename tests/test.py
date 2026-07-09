@@ -6,7 +6,7 @@ import inspect
 import functools
 import asyncio
 from collections import defaultdict, ChainMap, abc as c
-from decorator import dispatch_on, contextmanager, decorator
+from decorator import dispatch_on, contextmanager, decorator, FunctionMaker
 try:
     from . import documentation as doc  # good with pytest
 except ImportError:
@@ -113,6 +113,23 @@ class ExtraTestCase(unittest.TestCase):
     def test_signature(self):
         sig = inspect.signature(doc.f1)
         self.assertEqual(str(sig), '(x)')
+
+    def test_return_annotation(self):
+        # see https://github.com/micheles/decorator/issues/138
+        def add(a, b):
+            return a + b
+
+        # a signature string without a return annotation still works
+        add2 = FunctionMaker.create(
+            'add2(a: int, b: int)', 'return add(a, b)',
+            evaldict={'add': add})
+        self.assertEqual(add2(6, 8), 14)
+
+        # a signature string with a return annotation must not raise
+        add3 = FunctionMaker.create(
+            'add3(a: int, b: int) -> int', 'return add(a, b)',
+            evaldict={'add': add})
+        self.assertEqual(add3(6, 8), 14)
 
     def test_unique_filenames(self):
         @decorator

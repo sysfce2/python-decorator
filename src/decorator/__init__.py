@@ -253,22 +253,28 @@ class FunctionMaker:
         attribute __source__ is added to the result. The attributes attrs
         are added, if any.
         """
-        if isinstance(obj, str):  # "name(signature)"
+        if isinstance(obj, str):  # "name(signature)" or "name(signature) -> ret"
             name, rest = obj.strip().split('(', 1)
-            signature = rest[:-1]  # strip a right parens
+            # split the argument list from an optional return annotation;
+            # the argument list ends at the last right parens
+            signature, _, return_annotation = rest.rpartition(')')
             func = None
         else:  # a function
             name = None
             signature = None
+            return_annotation = ''
             func = obj
         self = cls(func, name, signature, defaults, doc, module)
+        self.return_annotation = return_annotation  # e.g. " -> int"
         ibody = '\n'.join('    ' + line for line in body.splitlines())
         caller = evaldict.get('_call_')  # when called from `decorate`
         if caller and iscoroutinefunction(caller):
-            body = ('async def %(name)s(%(signature)s):\n' + ibody)
+            body = ('async def %(name)s(%(signature)s)'
+                    '%(return_annotation)s:\n' + ibody)
             body = re.sub(r'\breturn\b', 'return await', body)
         else:
-            body = 'def %(name)s(%(signature)s):\n' + ibody
+            body = ('def %(name)s(%(signature)s)'
+                    '%(return_annotation)s:\n' + ibody)
         return self.make(body, evaldict, addsource, **attrs)
 
 
